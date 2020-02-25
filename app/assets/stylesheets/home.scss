@@ -4,12 +4,38 @@
 
 .theme {
     width: 99vw;
-    height: 2em;
-    font-size: 2em;
-    border: 0;
+    height: 4em;
     margin: auto;
-    
-    option {
-        font-size: 0.7em;
+    select {
+        width: 100%;
+        height: 100%;
+        font-size: 2em;
+        border: 0;
+        option {
+            font-size: 0.7em;
+        }
+    }
+}
+
+.theme.edit-mode {
+    display: flex;
+    flex-direction: row;
+    select {
+        width: calc(100% - 120px);
+    }
+    div {
+        display: flex;
+        background-color: blue;
+        color: white;
+        width: 120px;
+        height: 100%;
+        text-align: center;
+        font-size: 2em;
+        cursor: pointer;
+        align-items: center;
+        p{
+            width: 100%;
+            text-align: center;
+        }
     }
 }
