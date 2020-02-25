@@ -1,0 +1,5 @@
+<select name="theme" id="">
+<%= @themes.each do |theme|%>
+    <option value="<%=theme.id%>"><%=theme.name%></option>
+<% end %>
+</select>
