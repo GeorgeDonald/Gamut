@@ -1,5 +1,11 @@
-<select name="theme" id="">
-<%= @themes.each do |theme|%>
-    <option value="<%=theme.id%>"><%=theme.name%></option>
-<% end %>
+<select name="theme" id="" class="theme" onchange="onThemeSelChanged(this.value)">
+    <%= @themes.each do |theme|%>
+        <option value="<%=theme.id%>">
+            <%=theme.name%>
+        </option>
+    <% end %>
+    <% if @editMode %>
+        <option value = "0">&lt;&lt; New &gt;&gt;</option>
+    <% end %>
 </select>
+<div onclick="onEditTheme()">Edit</div>
