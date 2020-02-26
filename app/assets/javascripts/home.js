@@ -1,9 +1,19 @@
 function onThemeSelChanged(id){
-    alert(id)
+    let btn = document.getElementById('edit_theme');
+    if(btn){
+        btn.disabled = id == 0;
+    }
+
+    if(id == 0){
+        window.location.href = '/themes/new'
+    }
 }
 
 function onEditTheme() {
-    alert("Editing")
+    let ele = document.getElementById('theme_dropdown');
+    if(ele.value > 0) {
+        window.location.href = `/themes/${ele.value}/edit`
+    }
 }
 
 window.onload = () => {

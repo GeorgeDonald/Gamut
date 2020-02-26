@@ -23,19 +23,8 @@
     select {
         width: calc(100% - 120px);
     }
-    div {
-        display: flex;
-        background-color: blue;
-        color: white;
+    button {
         width: 120px;
-        height: 100%;
-        text-align: center;
         font-size: 2em;
-        cursor: pointer;
-        align-items: center;
-        p{
-            width: 100%;
-            text-align: center;
-        }
     }
 }

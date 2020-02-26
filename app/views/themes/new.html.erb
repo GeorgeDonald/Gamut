@@ -1,0 +1,24 @@
+<%= form_for( @theme , local: true) do |f| %>
+    <% if @theme.errors.any? %>
+        <div id="error_explanation">
+            <h2><%= pluralize(@theme.errors.count, "error") %> prohibited this theme from being saved:</h2>
+            <ul>
+                <% @theme.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                <% end %>
+            </ul>
+        </div>
+    <% end %>
+    
+    <div>
+        <%= f.label :name, "Name: " %>
+        <%= f.text_field :name %>
+    </div>
+    <div>
+        <%= f.label :description, "Description: " %>
+        <%= f.text_area :description %>
+    </div>
+    <div>
+        <%= f.submit %>
+    </div>
+<% end %>
