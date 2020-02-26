@@ -1,5 +1,5 @@
 <header class="theme <%= @themeClass %>">
-    <select name="theme" id="" onchange="onThemeSelChanged(this.value)">
+    <select name="theme" id="theme_dropdown" onchange="onThemeSelChanged(this.value)">
         <%= @themes.each do |theme|%>
             <option value="<%=theme.id%>">
                 <%=theme.name%>
