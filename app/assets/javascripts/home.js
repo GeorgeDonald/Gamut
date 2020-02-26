@@ -6,6 +6,15 @@ function onThemeSelChanged(id){
 
     if(id == 0){
         window.location.href = '/themes/new'
+    } else{
+        document.getElementById("topic").innerHTML = "";
+        $.ajax({
+            url: `/themes/${id}/topics`
+        }).done(result => {
+            alert(JSON.stringify(result))
+        }).fail((xhr, err) => {
+            alert(err)
+        });
     }
 }
 

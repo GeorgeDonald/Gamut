@@ -4,6 +4,9 @@ Rails.application.routes.draw do
 
   # resources :themes
   # get 'themes/new'
-  resources :themes, only: [:new, :create, :update, :edit]
+  resources :themes, only: [:new, :create, :update, :edit] do 
+    get :topics
+  end
+
   # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
 end
