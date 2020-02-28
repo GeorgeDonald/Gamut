@@ -28,4 +28,8 @@ function onEditTheme() {
 window.onload = () => {
     let ele = document.getElementById('theme_dropdown');
     onThemeSelChanged(ele.value)
-}
+  
+    let app = new domApplication();
+    app.init();
+    console.log(app.mainWnd.id)
+  }
