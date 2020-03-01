@@ -335,7 +335,7 @@ class Color{
   _red = 0
   _green = 0
   _blue = 0
-  _alpha = 0
+  _alpha = 1
 
   constructor(red, green, blue, alpha){
     if(typeof red == "string"){
@@ -344,9 +344,13 @@ class Color{
       if(rlt && rlt.length == 2){
         if(rlt[1].length==2) rlt[1] = rlt[1] + rlt[1] + rlt[1];
         else if(rlt[1].length==3) rlt[1] = rlt[1] + rlt[1].split("").reverse().join("");
+        if(rlt[1].length <= 6) {
+          for(;rlt[1].length < 6;) rlt[1] = "0" + rlt[1];
+          for(;rlt[1].length < 8;) rlt[1] = "f" + rlt[1];
+        }
         for(;rlt[1].length < 8;) rlt[1] = "0" + rlt[1];
 
-        this._alpha = parseInt(rlt[1].substring(0,2), 16);
+        this._alpha = parseInt(rlt[1].substring(0,2), 16) / 255.0;
         this._red = parseInt(rlt[1].substring(2,4), 16);
         this._green = parseInt(rlt[1].substring(4,6), 16);
         this._blue = parseInt(rlt[1].substring(6), 16);
@@ -412,10 +416,13 @@ class Color{
     return this.alpha;
   }
   set alpha(a){
-    this._alpha = Color.GetColorValue(a);
+    this._alpha = Color.GetColorValue(a > 1 ? 1 : a < 0 ? 0 : a);
   }
   set a(a){
     this.alpha = a;
+  }
+  Equals(other){
+    return equalsTo(['red', 'green', 'blue', 'alpha'], this, other);
   }
 }
 ////////////////////////////////////////////////////////////////////
@@ -563,8 +570,17 @@ class domWnd {
     this.element.style.height = m.descript;
   }
   get bgClr(){
-    //re = /^rgba*\((\d{1,3}), (\d{1,3}), (\d{1,3}),* *(\d*)\)$/g
-    return this.element.style.backgroundColor;
+    let bc = window.getComputedStyle(this.element).backgroundColor;
+    let re = /^rgba*\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3}),*\s*(\d*)\)$/g;
+    let rlt = re.exec(bc);
+    if(rlt && rlt.length == 5){
+      return Color.New(rlt[1], rlt[2], rlt[3], rlt[4] == "" ? window.getComputedStyle(this.element).opacity : rlt[4]);
+    }
+    return Color.New(this.element.style.backgroundColor);
+  }
+  set bkClr(clr){
+    clr = Color.New.apply(null, arguments);
+    this.element.style.backgroundColor = `rgba(${clr.r}, ${clr.g}, ${clr.b}, ${clr.a})`
   }
   // for this base wnd class, create a "div" wnd
   // unless parent is null, in which case set this wnd to html body
