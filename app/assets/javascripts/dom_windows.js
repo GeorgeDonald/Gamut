@@ -1,6 +1,19 @@
 ////////////////////////////////////////////////////////////////////
 // global functions
 function log(msg){
+  let e = new Error();
+  if(!e.stack){
+    try{
+      throw e;
+    } catch(e){
+    }
+  }
+  if(e.stack){
+    let stack = e.stack.toString().split(/\r\n|\n/);
+    if(stack.length > 2) {
+      msg += "\n" + stack.splice(2).join("\n");
+    }
+  }
   console.log(msg);
 }
 
@@ -641,10 +654,22 @@ class domWnd {
   }
 
   SetAttributes(attributes){
-    if(typeof attr != 'object' || !(attr instanceof Object) || attr instanceof Array) return;
+    if(typeof attributes != 'object' || !(attributes instanceof Object) || attributes instanceof Array) {
+      if(arguments.length == 2 && typeof attributes == 'string') {
+        attributes = {[attributes]: arguments[1]};
+      } else {
+        log("Invalid parameters");
+        return;
+      }
+    }
 
-    Object.keys(attributes)(attr => {
-      // if(typeof this[attr] != 'undefined')
+    Object.keys(attributes).forEach(attr => {
+      let setter = this.constructor.prototype.__lookupSetter__(attr);
+      if(setter == undefined) {
+        log(`Attribute "${attr} is not defined in ${this.constructor.name}"`);
+        return;
+      }
+      this[attr] = attributes[attr];
     });
   }
   // for this base wnd class, create a "div" wnd
@@ -697,14 +722,12 @@ class domWnd {
   static CreateNew(parent, wnd = domWnd){
     let nw = new wnd();
     if(nw.Create(parent)) return nw;
+    
     return null;
   }
 }
 
-class domStatic extends domWnd {
-  constructor(){
-    super(null, "p");
-  }
+class domDiv extends domWnd {
   get text(){
     this.element.innerText;
   }
