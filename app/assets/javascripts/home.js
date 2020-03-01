@@ -26,7 +26,9 @@ function onEditTheme() {
 }
 
 window.onload = onLoad;
+var mainPage = null;
 function onLoad(){
+    log("Entered");
     // let ele = document.getElementById('theme_dropdown');
     // if(ele) {
     //     onThemeSelChanged(ele.value)
@@ -34,6 +36,7 @@ function onLoad(){
     for(;document.body.children.length>0;){
         document.body.removeChild(document.body.children[0]);
     }
+    log("Delete all elements on entered")
 
     let clr = new Color(10, 20, 30, 1);
     if(clr.r != 10) log("error")
@@ -65,7 +68,7 @@ function onLoad(){
         if(clr.g != Color.predefinedColors[cn][1]) log("error")
         if(clr.b != Color.predefinedColors[cn][2]) log("error")
         if(clr.a != 1) log("error")
-    
+
     })
 
     clr.r = 101;
@@ -112,15 +115,22 @@ function onLoad(){
 
     if(!clr.Equals(new Color(0x1f, 0x2f, 0x3f, 1))) log("error Color.Equals");
 
-    let page = domPage.New();
+    mainPage = domPage.New();
+
     let nwnd = new domWnd();
-    nwnd.Create(page.mainWnd)
+    nwnd.Create(mainPage.mainWnd)
 
     nwnd.width = "80px"
     nwnd.height = "120px"
-    nwnd.bkClr = "blue"
-    let bgc = nwnd.bgClr;
-    if(!bgc.Equals(Color.New(0, 0, 255, 1))) log("Error: domWnd.bgClr setter and getter")
+    nwnd.bgdClr = {blue: 255, alpha: 0.5}
+    let bgc = nwnd.bgdClr;
+    if(!bgc.Equals(Color.New(0, 0, 255, 0.5))) log(`Error: domWnd.bgClr setter and getter: ${bgc}`)
+
+    nwnd = domWnd.New()
+    nwnd.Create(mainPage.mainWnd);
+    nwnd.width = "160px"
+    nwnd.height = "160px"
+    nwnd.bgdClr = "green"
     
     log("Done")
-  }
+}

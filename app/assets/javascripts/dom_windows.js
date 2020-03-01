@@ -367,6 +367,7 @@ class Color{
     }
 
     let t = toNumberObject(["red", "green", "blue", "alpha"], red, green, blue, alpha);
+
     this._red = t.red;
     this._green = t.green;
     this._blue = t.blue;
@@ -482,6 +483,12 @@ class domPage{
     if(!domPage.Units().includes(unit)) return;
     this._unit = unit;
   }
+  Destroy(){
+    this._idCounter = 1;
+    this._mainWnd.Destroy();
+    this._mainWnd = null;
+    this._unit = "px"
+  }
 }
 
 // base wnd class
@@ -501,13 +508,18 @@ class domWnd {
   _id = "0";
   _page = null;
   _parent = null;
+  _children = {};
+  _zorder = [];
+  _elementTag;
 
   ////////////////////////////////
   // constructor
   // a wnd must be belong to a page
-  constructor(page){
+  constructor(page, tag = "div"){
     this._page = page;
+    this._tag = tag;
   }
+
 
   get page() {
     return this._page;
@@ -542,7 +554,7 @@ class domWnd {
     let ele = this.element;
     return new Position(ele.clientLeft, ele.clientTop);
   }
-  static Metric(desc){
+  Metric(desc){
     let value;
     let unit;
     if(typeof desc == "number") {
@@ -560,27 +572,80 @@ class domWnd {
     return {value, unit, descript: `${value}${unit}`}
   }
   set width(width) {
-    let m = domWnd.Metric(width);
+    let m = this.Metric(width);
     if(!m) return;
     this.element.style.width = m.descript;
   }
   set height(height){
-    let m = domWnd.Metric(height);
+    let m = this.Metric(height);
     if(!m) return;
     this.element.style.height = m.descript;
   }
-  get bgClr(){
-    let bc = window.getComputedStyle(this.element).backgroundColor;
-    let re = /^rgba*\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3}),*\s*(\d*)\)$/g;
+  GetColor(attr){
+    let bc = window.getComputedStyle(this.element)[attr];
+    let re = /^rgba*\((\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),*\s*(\d*\.*\d*)\)$/g;
     let rlt = re.exec(bc);
     if(rlt && rlt.length == 5){
-      return Color.New(rlt[1], rlt[2], rlt[3], rlt[4] == "" ? window.getComputedStyle(this.element).opacity : rlt[4]);
+      rlt[4] = rlt[4] == "" ? window.getComputedStyle(this.element).opacity : rlt[4];
+      for(let i = 1; i < 5; i++){
+        rlt[i] = parseFloat(rlt[i]);
+      }
+      return Color.New(rlt[1], rlt[2], rlt[3], rlt[4]);
     }
-    return Color.New(this.element.style.backgroundColor);
+    return Color.New(this.element.style[attr]);
   }
-  set bkClr(clr){
-    clr = Color.New.apply(null, arguments);
-    this.element.style.backgroundColor = `rgba(${clr.r}, ${clr.g}, ${clr.b}, ${clr.a})`
+  get bgdClr(){
+    return this.GetColor("backgroundColor")
+  }
+  get txtClr(){
+    return this.GetColor("color");
+  }
+  SetColor(attr, clr){
+    let args = Array.from(arguments).splice(1);
+    clr = Color.New.apply(null, args);
+    this.element.style[attr] = `rgba(${clr.r}, ${clr.g}, ${clr.b}, ${clr.a})`
+  }
+  set bgdClr(clr){
+    let args = Array.from(arguments);
+    args.unshift("backgroundColor")
+    this.SetColor.apply(this, args);
+  }
+  set txtClr(clr){
+    let args = Array.from(arguments);
+    args.unshift("color")
+    this.SetColor.apply(this, args);
+  }
+
+  AddChild(child){
+    if(this._children[child.id] != null) {
+      return false;
+    }
+    
+    child._parent = this;
+    this._children[child.id] = {
+      wnd: child,
+      zorder: this._zorder.push(child.id) - 1
+    };
+    return true;
+  }
+
+  DestroyChild(child){
+    if(this._children[child.id] == null) {
+      return true;
+    }
+
+    this._zorder.splice(this._children[child.id].zorder, 1);
+    this._children[child.id] = null;
+
+    return true;
+  }
+
+  SetAttributes(attributes){
+    if(typeof attr != 'object' || !(attr instanceof Object) || attr instanceof Array) return;
+
+    Object.keys(attributes)(attr => {
+      // if(typeof this[attr] != 'undefined')
+    });
   }
   // for this base wnd class, create a "div" wnd
   // unless parent is null, in which case set this wnd to html body
@@ -590,6 +655,7 @@ class domWnd {
     if(!parent){
       if(!this._page || !(this._page instanceof domPage)) return false;
       this._id = document.body.id.toString();
+      this._tag = "body";
       return true;
     }
 
@@ -599,18 +665,53 @@ class domWnd {
 
     this._page = parent.page;
     this._id = this.page.newId;
-    this._parent = parent;
-    let thisElement = document.createElement("div");
+    let thisElement = document.createElement(this._tag);
     thisElement.id = this._id;
-    
+    thisElement.style.position = "relative";
+
     let parentElement = document.getElementById(parent.id);
     parentElement.appendChild(thisElement);
+    
+    return parent.AddChild(this)
+  }
 
+  get parent(){
+    return this._parent;
+  }
+
+  Destroy(){
+    for(;this._zorder.length;) {
+      this._children[this._zorder[0]].wnd.Destroy();
+    }
+
+    if(!this._parent) return true;
+
+    if(!this._parent.DestroyChild(this)) return false;
+    this._parent.element.removeChild(this.element);
     return true;
+  }
+  
+  static New(wnd = domWnd){
+    return new wnd();
+  }
+  static CreateNew(parent, wnd = domWnd){
+    let nw = new wnd();
+    if(nw.Create(parent)) return nw;
+    return null;
   }
 }
 
-
+class domStatic extends domWnd {
+  constructor(){
+    super(null, "p");
+  }
+  get text(){
+    this.element.innerText;
+  }
+  set text(text){
+    this.element.innerText = text;
+  }
+}
 
 
 
