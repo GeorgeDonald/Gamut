@@ -341,7 +341,7 @@ class Color{
     else return 0;
   }
 
-  static New(red, green, blue, alpha) {
+  static New(red, green, blue, alpha = 1) {
     return new Color(red, green, blue, alpha);
   }
 
@@ -350,7 +350,7 @@ class Color{
   _blue = 0
   _alpha = 1
 
-  constructor(red, green, blue, alpha){
+  constructor(red, green, blue, alpha = 1){
     if(typeof red == "string"){
       let re = /^\s*#{0,1}([0-9a-fA-F]{2,8})\s*$/g;
       let rlt = re.exec(red);
@@ -369,12 +369,26 @@ class Color{
         this._blue = parseInt(rlt[1].substring(6), 16);
         return;
       } else {
-        let clr = Color.predefinedColors[red.toLowerCase()];
-        if(clr){
-          this._red = clr[0];
-          this._green = clr[1];
-          this._blue = clr[2];
+        let re = /^rgba*\((\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),*\s*(\d*\.*\d*)\)$/g;
+        let rlt = re.exec(red);
+        if(rlt && rlt.length == 5){
+          rlt[4] = rlt[4] == "" ? window.getComputedStyle(this.element).opacity : rlt[4];
+          for(let i = 1; i < 5; i++){
+            rlt[i] = parseFloat(rlt[i]);
+          }
+          this._red = rlt[1];
+          this._green = rlt[2];
+          this._blue = rlt[3];
+          this._alpha = rlt[4];
           return;
+        } else {
+          let clr = Color.predefinedColors[red.toLowerCase()];
+          if(clr){
+            this._red = clr[0];
+            this._green = clr[1];
+            this._blue = clr[2];
+            return;
+          }
         }
       }
     }
@@ -438,6 +452,86 @@ class Color{
   Equals(other){
     return equalsTo(['red', 'green', 'blue', 'alpha'], this, other);
   }
+}
+
+class Lateral {
+  static styles = [
+    'dotted',
+    'dashed',
+    'solid',
+    'double',
+    'groove',
+    'ridge',
+    'inset',
+    'outset',
+    'none',
+    'hidden',
+  ];
+
+  _lineStyle = "solid"
+  _width = 0
+  _unit = "px"
+  _color = new Color(0, 0, 0, 1);
+
+  constructor(width, style, color){
+    if(typeof width == "string"){
+      let ss = width.split(" ");
+      ss = ss.filter(v => v != "");
+      if(ss.length == 3){
+        for(let s of ss) {
+          if(styles.includes(s)) style = s;
+          else if(Color.predefinedColors.includes(s)) color = s;
+          else if(/^#\d+[0-9A-Fa-f]*$/g.text(s)) color = s;
+          else if(/^\d+\.*\d*[a-zA-Z]*$/g.test(s)) width = s;
+          else if(/^\{.+\}$/) color = s;
+        }
+      }
+    }
+    if(styles.includes(style)) _lineStyle = style;
+    let m = domWnd.Metric(width, this._unit);
+    _width = m.value;
+    _unit = m.unit;
+    if(color){
+      _color = new Color(color);
+    }
+
+
+  }
+
+  get style(){
+    return this._lineStyle;
+  }
+  get width(){
+    return this._width;
+  }
+  get unit(){
+    return this._unit;
+  }
+  get color(){
+    return this._color;
+  }
+
+  set style(s){
+    if(Lateral.styles.includes(s))
+      this._lineStyle = s;
+  }
+  set width(width){
+    let m = domWnd.Metric(width, this._unit);
+    _width = m.value;
+    _unit = m.unit;
+  }
+  set unit(u){
+    if(domWnd.Units.includes(u)) {
+      this._unit = u;
+    }
+  }
+  set color(c){
+    this._color = Color.New.apply(null, arguments);
+  }
+}
+
+class Border {
+  _left
 }
 ////////////////////////////////////////////////////////////////////
 
@@ -567,12 +661,12 @@ class domWnd {
     let ele = this.element;
     return new Position(ele.clientLeft, ele.clientTop);
   }
-  Metric(desc){
+  static Metric(desc, defaultUnit){
     let value;
     let unit;
     if(typeof desc == "number") {
       value = desc;
-      unit = this.page.unit;
+      unit = defaultUnit;
     } else {
       let re = /^\s*(\-*\d+\.*\d*)([a-zA-Z]*)\s*$/g;
       let rs = re.exec(desc);
@@ -585,33 +679,27 @@ class domWnd {
     return {value, unit, descript: `${value}${unit}`}
   }
   set width(width) {
-    let m = this.Metric(width);
+    let m = domWnd.Metric(width, this.page.unit);
     if(!m) return;
     this.element.style.width = m.descript;
   }
   set height(height){
-    let m = this.Metric(height);
+    let m = domWnd.Metric(height, this.page.unit);
     if(!m) return;
     this.element.style.height = m.descript;
   }
   GetColor(attr){
     let bc = window.getComputedStyle(this.element)[attr];
-    let re = /^rgba*\((\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),\s*(\d{1,3}\.*\d*),*\s*(\d*\.*\d*)\)$/g;
-    let rlt = re.exec(bc);
-    if(rlt && rlt.length == 5){
-      rlt[4] = rlt[4] == "" ? window.getComputedStyle(this.element).opacity : rlt[4];
-      for(let i = 1; i < 5; i++){
-        rlt[i] = parseFloat(rlt[i]);
-      }
-      return Color.New(rlt[1], rlt[2], rlt[3], rlt[4]);
-    }
-    return Color.New(this.element.style[attr]);
+    return Color.New(bc);
   }
   get bgdClr(){
     return this.GetColor("backgroundColor")
   }
   get txtClr(){
     return this.GetColor("color");
+  }
+  get border(){
+
   }
   SetColor(attr, clr){
     let args = Array.from(arguments).splice(1);
